@@ -4,7 +4,7 @@ using UnityEngine;
 
 public class EnvObj : MonoBehaviour
 {
-    // Start is called before the first frame update
+    [SerializeField] public Transform endPoint;
     void Start()
     {
         
