@@ -14,17 +14,9 @@ public class Character : MonoBehaviour
     public LayerMask _groundLayer;
 
 
-    void Start()
-    {
-       // velocity.z = 1;
-    }
-
-    // Update is called once per frame
+  
     void Update()
     {
-        float forward = Input.GetAxisRaw("Vertical");
-        float right = Input.GetAxisRaw("Horizontal");
-
         RaycastHit hit;
         if (Physics.Raycast(new Vector3(transform.position.x, transform.position.y + 0.2f, transform.position.z), -transform.up, out hit, 1f, _groundLayer))
         {
@@ -51,27 +43,12 @@ public class Character : MonoBehaviour
             side += 3;
             StartCoroutine(SLerp(side));
             _animator.SetInteger("right", (int)1);
-
-
-            //velocity.x = 3;
         }
-        else if(right==0)
-        {
-            _animator.SetInteger("right",0);
-           //  side = 0;
-
-            // velocity.x = 0;
-        }
-
-
         if (Input.GetKeyDown(KeyCode.W) && _isJumping)
         {
-            // _jumpCount--;
             _isJumping = false;
             velocity.y = 4;
                 _animator.SetInteger("forward", 1);
-
-            // _rigidBody.AddForce(transform.up * _jumpSpeed * Time.deltaTime, ForceMode.Impulse);
         }
         if (!_isJumping)
             velocity.y -= 10 * Time.deltaTime;
@@ -86,11 +63,6 @@ public class Character : MonoBehaviour
             _animator.SetInteger("forward", -1);
 
         }
-
-
-        // velocity.x = Mathf.Lerp(velocity.x, side, Time.deltaTime * 12);
-        // velocity.x = Mathf.Lerp(velocity.x, side, Time.deltaTime * 12);
-
         transform.position += new Vector3(0, velocity.y, _runSpeed) * Time.deltaTime * 10;
         transform.position = new Vector3(velocity.x, transform.position.y, transform.position.z);
     }
@@ -128,9 +100,16 @@ public class Character : MonoBehaviour
     {
         if(other.gameObject.tag=="NextTrackCollider")
         {
-            Debug.LogError("tag tag");
-
             EnvManager.Instance.Trigg();
         }
+    }
+    public void OnAnimEventCallback(string state)
+    {
+      //  Debug.LogError(state);
+        if(state.Equals("right"))
+            _animator.SetInteger("right", 0);
+        if (state.Equals("forward"))
+            _animator.SetInteger("forward", 0);
+
     }
 }
