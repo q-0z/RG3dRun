@@ -137,14 +137,18 @@ public class Character : MonoBehaviour,IPawn
     }
     public void ReduceHealth()
     {
-     //   _healthPointCurr--;
-        if(_healthPointCurr<=0)
+           _healthPointCurr--;
+        UIManager.Instance.SetLife(_healthPointCurr);
+
+        if (_healthPointCurr<=0)
         {
-            Destroy(this.gameObject);
+           // Destroy(this.gameObject);
         }
     }
     public void AddCoin()
     {
         _coinCount++;
+        UIManager.Instance.SetCoin(_coinCount);
+
     }
 }

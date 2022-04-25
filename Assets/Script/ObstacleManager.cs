@@ -31,6 +31,7 @@ public class ObstacleManager : MonoBehaviour
     public GameObject getRandomObstacle()
     {
         int id= Random.Range(0, obstacleList.Count);
+        if (_obsPool.Count <= 0) return null;
         var obj = _obsPool.Dequeue();//Instantiate(obstacleList[id]);
 
         float randX = xRange[Random.Range(0, 3)];
