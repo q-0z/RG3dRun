@@ -40,7 +40,8 @@ public class EnvManager : MonoBehaviour
 
 
     }
-    EnvObj GetEnv()
+    
+        EnvObj GetEnv()
     {
         return _envPool.Dequeue();
     }

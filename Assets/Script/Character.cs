@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Character : MonoBehaviour
+public class Character : MonoBehaviour,IPawn
 {
     public Vector3 velocity;
     public Animator _animator;
@@ -13,8 +13,15 @@ public class Character : MonoBehaviour
     public bool _isInAir = false;
     public LayerMask _groundLayer;
 
+    public int _healthPointCurr = 0;
+    public int _healthPointMax = 3;
+    public int _coinCount = 0;
+    private void Start()
+    {
+        StartCoroutine(ObstacleGenerator());
+        _healthPointCurr = _healthPointMax;
+    }
 
-  
     void Update()
     {
         RaycastHit hit;
@@ -98,10 +105,17 @@ public class Character : MonoBehaviour
     }
     private void OnTriggerEnter(Collider other)
     {
-        if(other.gameObject.tag=="NextTrackCollider")
+        if(other.gameObject.tag.Equals("NextTrackCollider"))
         {
             EnvManager.Instance.Trigg();
         }
+
+        if (other.GetComponent<IInteractable>()!=null)
+        {
+            other.GetComponent<IInteractable>().OnCollide(this);
+            //_healthPointCurr--;
+        }
+        
     }
     public void OnAnimEventCallback(string state)
     {
@@ -111,5 +125,26 @@ public class Character : MonoBehaviour
         if (state.Equals("forward"))
             _animator.SetInteger("forward", 0);
 
+    }
+
+    IEnumerator ObstacleGenerator()
+    {
+        while (true)
+        {
+            var obj=ObstacleManager.Instance.getRandomObstacle();
+            yield return new WaitForSeconds(0.5f);
+        }
+    }
+    public void ReduceHealth()
+    {
+     //   _healthPointCurr--;
+        if(_healthPointCurr<=0)
+        {
+            Destroy(this.gameObject);
+        }
+    }
+    public void AddCoin()
+    {
+        _coinCount++;
     }
 }
