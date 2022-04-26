@@ -4,18 +4,29 @@ using UnityEngine;
 
 public class Character : MonoBehaviour,IPawn
 {
-    public Vector3 velocity;
-    public Animator _animator;
 
-    float side = 0;
-    [SerializeField]private float _runSpeed = 1;
-    public bool _isJumping = false;
-    public bool _isInAir = false;
-    public LayerMask _groundLayer;
+    
+    [SerializeField] private float _runSpeed = 1;
+    [SerializeField] private float _obstacleGenInterval = 0.5f;
+    [SerializeField] private float _jumpSpeed = 4;
+    [SerializeField] private float _smoothRatio = 10;
+    [SerializeField] private int _healthPointMax = 3;
+    [SerializeField] private int _coinCount = 0;
+    [SerializeField] private Animator _animator;
+    [SerializeField] private LayerMask _groundLayer;
 
-    public int _healthPointCurr = 0;
-    public int _healthPointMax = 3;
-    public int _coinCount = 0;
+    private float _xSlide = 0;
+    private float _swipeMaxInXY = .5f;
+    private float _xDirLerp = .5f;
+    private float _maxRaycastInYdir = 0.2f;
+    private float _xDirSliding = 3;
+    private int _healthPointCurr = 0;
+    private bool _isInAir = false;
+    private bool _isLeft, _isRight, _isDown, _isUp;
+    private Vector2 firstPressPos, secondPressPos;
+    private Vector3 currentSwipe;
+    private Vector3 _velocity;
+
     private void Start()
     {
         StartCoroutine(ObstacleGenerator());
@@ -24,81 +35,142 @@ public class Character : MonoBehaviour,IPawn
 
     void Update()
     {
+        if (Time.timeScale == 0) return;
         RaycastHit hit;
-        if (Physics.Raycast(new Vector3(transform.position.x, transform.position.y + 0.2f, transform.position.z), -transform.up, out hit, 1f, _groundLayer))
-        {
-            _isInAir = true;
-            _isJumping = true;
-
-        }
-        else
+        if (Physics.Raycast(
+            new Vector3(transform.position.x, transform.position.y + _maxRaycastInYdir, transform.position.z),
+            -transform.up, out hit, 1f, _groundLayer))
         {
             _isInAir = false;
-            _isJumping = false;
-        }
 
-        if (Input.GetKeyDown(KeyCode.A) && transform.position.x > -3)
-        {
-            side += -3;
-            StartCoroutine(SLerp(side));
-            _animator.SetInteger("right", (int)-1);
-
-            // velocity.x =- 3;
         }
-        else if (Input.GetKeyDown(KeyCode.D) && transform.position.x < 3)
-        {
-            side += 3;
-            StartCoroutine(SLerp(side));
-            _animator.SetInteger("right", (int)1);
-        }
-        if (Input.GetKeyDown(KeyCode.W) && _isJumping)
-        {
-            _isJumping = false;
-            velocity.y = 4;
-                _animator.SetInteger("forward", 1);
-        }
-        if (!_isJumping)
-            velocity.y -= 10 * Time.deltaTime;
         else
         {
-            velocity.y = 0;
-
-                _animator.SetInteger("forward", 0);
+            _isInAir = true;
         }
-        if(Input.GetKeyDown(KeyCode.S) && _isJumping)
+        MovementKey();
+        if (_isLeft && transform.position.x > -_xDirSliding)
+        {
+            _xSlide += -_xDirSliding;
+            StartCoroutine(SLerp(_xSlide));
+            _animator.SetInteger("right",-1);
+            _isLeft = false;
+            _isRight = false;
+            _isDown = false;
+            _isUp = false;
+        }
+        else if (_isRight && transform.position.x < _xDirSliding)
+        {
+            _xSlide += _xDirSliding;
+            StartCoroutine(SLerp(_xSlide));
+            _animator.SetInteger("right", 1);
+            _isLeft = false;
+            _isRight = false;
+            _isDown = false;
+            _isUp = false;
+        }
+        if (_isUp && !_isInAir)
+        {
+            _isInAir = true;
+            _velocity.y = _jumpSpeed;
+                _animator.SetInteger("forward", 1);
+            _isLeft = false;
+            _isRight = false;
+            _isDown = false;
+            _isUp = false;
+        }
+        if (_isInAir)
+            _velocity.y -= _smoothRatio * Time.deltaTime;
+ 
+        if(_isDown && !_isInAir)
         {
             _animator.SetInteger("forward", -1);
+            _isLeft = false;
+            _isRight = false;
+            _isDown = false;
+            _isUp = false;
 
         }
-        transform.position += new Vector3(0, velocity.y, _runSpeed) * Time.deltaTime * 10;
-        transform.position = new Vector3(velocity.x, transform.position.y, transform.position.z);
+        transform.position += new Vector3(0, _velocity.y, _runSpeed) * Time.deltaTime * _smoothRatio;
+        transform.position = new Vector3(_velocity.x, transform.position.y, transform.position.z);
+
+
+
     }
 
+    void MovementKey()
+    {
+
+#if UNITY_EDITOR
+        _isLeft = Input.GetKeyDown(KeyCode.A);
+        _isRight = Input.GetKeyDown(KeyCode.D);
+        _isDown = Input.GetKeyDown(KeyCode.S);
+        _isUp = Input.GetKeyDown(KeyCode.W);
+
+#elif UNITY_ANDROID || UNITY_IOS
+
+        if (Input.touches.Length > 0)
+        {
+            Touch t = Input.GetTouch(0);
+            if (t.phase == TouchPhase.Began)
+            {
+                firstPressPos = new Vector2(t.position.x, t.position.y);
+            }
+            if (t.phase == TouchPhase.Ended)
+            {
+                secondPressPos = new Vector2(t.position.x, t.position.y);
+                currentSwipe = new Vector3(secondPressPos.x - firstPressPos.x, secondPressPos.y - firstPressPos.y);
+                currentSwipe.Normalize();
+
+                if (currentSwipe.y > 0 && currentSwipe.x > -_swipeMaxInXY && currentSwipe.x < _swipeMaxInXY)
+                {
+                    _isLeft = false;
+                    _isRight = false;
+                    _isDown = false;
+                    _isUp = true;
+                }
+                if (currentSwipe.y < 0 && currentSwipe.x > -_swipeMaxInXY && currentSwipe.x < _swipeMaxInXY)
+                {
+                    _isLeft = false;
+                    _isRight = false;
+                    _isDown = true;
+                    _isUp = false;
+                }
+                if (currentSwipe.x < 0 && currentSwipe.y > -_swipeMaxInXY && currentSwipe.y < _swipeMaxInXY)
+                {
+                    _isLeft = true;
+                    _isRight = false;
+                    _isDown = false;
+                    _isUp = false;
+                }
+                if (currentSwipe.x > 0 && currentSwipe.y > -_swipeMaxInXY && currentSwipe.y < _swipeMaxInXY)
+                {
+                    _isLeft = false;
+                    _isRight = true;
+                    _isDown = false;
+                    _isUp = false;
+                }
+            }
+        }
+#endif
+    }
 
     IEnumerator SLerp(float end)
     {
         {
-            while (velocity.x > end)
+            while (_velocity.x > end)
             {
-                velocity.x -= .5f;
-                yield return null;
-                // await System.Threading.Tasks.Task.Delay(1);
-                // yield return new WaitForEndOfFrame();
-               // yield return new WaitForSeconds(Time.deltaTime / 10000);
-
-            }
-            while (velocity.x < end)
-            {
-                velocity.x += .5f;
+                _velocity.x -= _xDirLerp;
                 yield return null;
 
-                //  yield return new WaitForEndOfFrame();
-
-                // await System.Threading.Tasks.Task.Delay(1);
-               // yield return new WaitForSeconds(Time.deltaTime / 10000);
+            }
+            while (_velocity.x < end)
+            {
+                _velocity.x += _xDirLerp;
+                yield return null;
 
             }
-            velocity.x = end;
+            _velocity.x = end;
 
         }
         
@@ -107,7 +179,7 @@ public class Character : MonoBehaviour,IPawn
     {
         if(other.gameObject.tag.Equals("NextTrackCollider"))
         {
-            EnvManager.Instance.Trigg();
+            EnvManager.Instance.OnTriggerCallback();
         }
 
         if (other.GetComponent<IInteractable>()!=null)
@@ -115,7 +187,26 @@ public class Character : MonoBehaviour,IPawn
             other.GetComponent<IInteractable>().OnCollide(this);
             //_healthPointCurr--;
         }
-        
+       
+    }
+    private void OnCollisionEnter(Collision other)
+    {
+        if (other.gameObject.tag.Equals("Ground"))
+        {
+            _isInAir = false;
+            _velocity.y = 0;
+            _animator.SetInteger("forward", 0);
+        }
+    }
+    private void OnCollisionStay(Collision other)
+    {
+        if (other.gameObject.tag.Equals("Ground"))
+        {
+            _isInAir = false;
+
+            _velocity.y = 0;
+            _animator.SetInteger("forward", 0);
+        }
     }
     public void OnAnimEventCallback(string state)
     {
@@ -123,7 +214,10 @@ public class Character : MonoBehaviour,IPawn
         if(state.Equals("right"))
             _animator.SetInteger("right", 0);
         if (state.Equals("forward"))
+        {
+           // _velocity.y = 0;
             _animator.SetInteger("forward", 0);
+        }
 
     }
 
@@ -132,7 +226,7 @@ public class Character : MonoBehaviour,IPawn
         while (true)
         {
             var obj=ObstacleManager.Instance.getRandomObstacle();
-            yield return new WaitForSeconds(0.5f);
+            yield return new WaitForSeconds(_obstacleGenInterval);
         }
     }
     public void ReduceHealth()
@@ -142,7 +236,8 @@ public class Character : MonoBehaviour,IPawn
 
         if (_healthPointCurr<=0)
         {
-           // Destroy(this.gameObject);
+            Time.timeScale = 0;
+            UIManager.Instance.ShowGameOverPanel();
         }
     }
     public void AddCoin()

@@ -50,7 +50,7 @@ public class EnvManager : MonoBehaviour
        // env.gameObject.SetActive(false);
         _envPool.Enqueue(env);
     }
-    public void Trigg()
+    public void OnTriggerCallback()
     {
         var Env=GetEnv();
         Env.gameObject.SetActive(true);

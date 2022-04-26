@@ -4,11 +4,13 @@ using UnityEngine;
 
 public class Coin : MonoBehaviour,IInteractable
 {
+    [SerializeField] private float _yAxisRotVal = 10;
     public void OnCollide(IPawn collObj)
     {
         
         collObj.AddCoin();
-       // Destroy(this.gameObject,0.5f);
+        this.gameObject.SetActive(false);
+        //Destroy(this.gameObject);
     }
     // Start is called before the first frame update
     void Start()
@@ -19,6 +21,6 @@ public class Coin : MonoBehaviour,IInteractable
     // Update is called once per frame
     void Update()
     {
-        
+        transform.Rotate(0, _yAxisRotVal, 0);
     }
 }

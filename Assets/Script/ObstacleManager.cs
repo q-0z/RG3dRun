@@ -15,7 +15,7 @@ public class ObstacleManager : MonoBehaviour
     {
         Instance = this;
     }
-    private void Start()
+    public void Init()
     {
         int j=0;
         for(int i=0;i<_maxObsPoolCount;i++)
@@ -35,7 +35,7 @@ public class ObstacleManager : MonoBehaviour
         var obj = _obsPool.Dequeue();//Instantiate(obstacleList[id]);
 
         float randX = xRange[Random.Range(0, 3)];
-        obj.transform.position = new Vector3(randX,transform.position.y,transform.position.z);
+        obj.transform.position = new Vector3(randX,-0.2f,transform.position.z);
         StartCoroutine(LateEnqueue(obj));
         return obj;
     }

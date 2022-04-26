@@ -5,11 +5,10 @@ using UnityEngine.UI;
 using TMPro;
 public class UIManager : MonoBehaviour
 {
-    public Button playBtnMainMenu, optionBtnMainMenu, exitBtnMainMenu;
-    public Button pauseBtnPauseMenu,resumeBtnPauseMenu, restartBtnPauseMenu, optionBtnPauseMenu, exitBtnPauseMenu;
-    public GameObject mainMenyPanel,pauseMenuPanel;
-
-    public TMP_Text coinTxt, lifeTxt;
+    [SerializeField]private Button playBtnMainMenu, optionBtnMainMenu, exitBtnMainMenu;
+    [SerializeField]private Button pauseBtnPauseMenu,resumeBtnPauseMenu, restartBtnPauseMenu, optionBtnPauseMenu, exitBtnPauseMenu;
+    [SerializeField]private GameObject mainMenyPanel,pauseMenuPanel,gameOverPanel;
+    [SerializeField]private TMP_Text coinTxt, lifeTxt;
 
     public static UIManager Instance;
     private void Awake()
@@ -45,33 +44,41 @@ public class UIManager : MonoBehaviour
         mainMenyPanel.SetActive(false);
         Time.timeScale = 1;
 
+        ObstacleManager.Instance.Init();
+
     }
     private void OnClickExitBtn()
     {
-
         Application.Quit();
-
     }
     private void OnClickResumeBtn()
     {
-
         Time.timeScale = 1;
         pauseMenuPanel.SetActive(false);
-
     }
     private void OnClickPauseBtn()
     {
-
         Time.timeScale = 0;
         pauseMenuPanel.SetActive(true);
-
     }
     private void OnClickRestartBtn()
     {
-
-        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(0);
+        StartCoroutine(RestartLevel(0));
     }
     private void OnClickOptionBtn()
     {
+    }
+
+    public void ShowGameOverPanel()
+    {
+        gameOverPanel.SetActive(true);
+
+        StartCoroutine(RestartLevel(3));
+    }
+
+    IEnumerator RestartLevel(float time)
+    {
+        yield return new WaitForSecondsRealtime(time);
+        UnityEngine.SceneManagement.SceneManager.LoadSceneAsync(0);
     }
 }
